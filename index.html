@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaForma — Aguamigos</title>
+
+<style>
+  :root{
+    --agua: #00b4d8; 
+    --azul-profundo: #03045e; 
+    --azul-medio: #0077b6;
+    --turquesa: #90e0ef; 
+    --marino: #102a43;
+    --fondo-fresco: #f0f7f9; 
+    --blanco: #ffffff;
+    --texto: #1c2d37;
+    --verde-exito: #2a9d8f;
+    --rojo-error: #e63946;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior: smooth;}
+  body{margin:0;background:var(--fondo-fresco);color:var(--texto);font-family:Arial,Helvetica,sans-serif; overflow-x: hidden; position: relative;}
+  
+  /* Canvas de Partículas Global */
+  #particles-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 99999;
+  }
+
+  header{
+    min-height:70vh; display:flex; align-items:center; padding:6vw;
+    position:relative; overflow:hidden;
+    background:
+      radial-gradient(circle at 80% 20%, rgba(144, 224, 239, 0.45), transparent 40%),
+      linear-gradient(135deg, #e0f4f7 0%, #a2d9e7 50%, #0077b6 100%);
+  }
+  header:before, header:after{
+    content:"";position:absolute;border:2px solid rgba(255, 255, 255, 0.35);
+    border-radius:50%;transform:rotate(-14deg); pointer-events: none;
+  }
+  header:before{width:52vw;height:18vw;right:-10vw;bottom:8vw}
+  header:after{width:42vw;height:14vw;right:2vw;bottom:4vw}
+
+  .hero-container{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+    gap: 20px;
+  }
+
+  .hero{max-width:680px; color: var(--marino)}
+  .tag{display:inline-block;border:1px solid var(--azul-medio);padding:8px 12px;
+       letter-spacing:.12em;text-transform:uppercase;font-size:.75rem; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px); border-radius: 4px;}
+  h1{font-family:Georgia,serif;font-size:clamp(2.8rem,7vw,6rem);line-height:.95;margin:20px 0 14px;color:var(--azul-profundo)}
+  h1 span{color:var(--agua);font-style:italic}
+  .hero p{font-size:1.15rem;max-width:650px;line-height:1.6; color: var(--marino)}
+  
+  /* --- MASCOTA GOTITA EN EL ENCABEZADO --- */
+  .hero-gotita-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 260px;
+  }
+
+  #gotita-hero {
+    width: 160px;
+    height: 180px;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: drop-shadow(0 10px 18px rgba(0, 119, 182, 0.35));
+    animation: floatGotita 3s ease-in-out infinite;
+  }
+  #gotita-hero:hover {
+    transform: scale(1.1) rotate(4deg);
+  }
+  #gotita-hero:active {
+    transform: scale(0.95);
+  }
+
+  @keyframes floatGotita {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .gotita-speech-bubble {
+    position: absolute;
+    top: -120px;
+    right: -20px;
+    width: 320px;
+    background: var(--blanco);
+    color: var(--azul-profundo);
+    border: 3px solid var(--agua);
+    padding: 14px 18px;
+    border-radius: 16px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    font-weight: 600;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(15px) scale(0.95);
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-align: left;
+  }
+  .gotita-speech-bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -12px;
+    left: 40px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 12px solid var(--agua);
+  }
+  .gotita-speech-bubble.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  .gotita-hint {
+    margin-top: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--azul-medio);
+    color: var(--azul-profundo);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: background 0.2s;
+  }
+  .gotita-hint:hover { background: var(--blanco); }
+
+  nav{position:absolute;right:5vw;top:28px;z-index:3; display: flex; flex-wrap: wrap; gap: 10px;}
+  nav a{color:var(--azul-profundo);text-decoration:none;font-weight:bold;font-size:.88rem; transition: color 0.2s; padding: 5px 10px; border-radius: 4px; background: rgba(255,255,255,0.45); backdrop-filter: blur(4px);}
+  nav a:hover{color:var(--agua); background: rgba(255,255,255,0.85);}
+
+  main{max-width:1180px;margin:auto;padding:50px 5vw}
+  section{margin-bottom:80px}
+  .section-title{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:2px solid var(--azul-medio);padding-bottom:12px}
+  .section-title h2{font-family:Georgia,serif;font-size: clamp(1.8rem, 4vw, 2.3rem);margin:0;color:var(--azul-profundo)}
+  .section-title small{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em; color: var(--azul-medio); font-weight: bold;}
+  
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px;margin-top:28px}
+  .card{background:var(--blanco);padding:25px;border:1px solid #cce3de;box-shadow:4px 6px 15px rgba(3, 4, 94, 0.05); border-radius: 8px}
+  .card h3{margin-top:0;color:var(--azul-medio)}
+  .number{font-family:Georgia,serif;font-size:2.5rem;color:var(--agua)}
+
+  /* --- SECCIÓN INTERACTIVA CON CONEXIÓN DE LÍNEAS SVG --- */
+  .match-wrapper{ position: relative; margin-top: 30px; }
+  
+  svg#lines-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .match-game{
+    display:grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 80px; 
+    position: relative;
+    z-index: 6;
+  }
+  @media(max-width: 850px){
+    .hero-container{ flex-direction: column; text-align: center; }
+    .hero p{ margin: 0 auto 20px; }
+    .gotita-speech-bubble{ top: -140px; right: 50%; transform: translateX(50%) translateY(15px); width: 280px; }
+    .gotita-speech-bubble::after{ left: 50%; transform: translateX(-50%); }
+    .gotita-speech-bubble.active{ transform: translateX(50%) translateY(0); }
+    .match-game{ grid-template-columns: 1fr; gap: 30px; }
+  }
+  
+  .match-column{display: flex; flex-direction: column; gap: 20px;}
+  
+  .match-card{
+    background: var(--blanco);
+    border: 2px solid var(--azul-medio);
+    padding: 18px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    user-select: none;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+  .match-card:hover{ border-color: var(--agua); transform: translateY(-2px); }
+  .match-card.selected{ border-color: var(--agua); background: #e0f4f7; box-shadow: 0 0 15px rgba(0, 180, 216, 0.5); }
+  .match-card.matched-correct{ border-color: var(--verde-exito); background: #e8f5e9; cursor: default; }
+  .match-card.matched-correct::after{ content: "✓ ¡Correcto!"; position: absolute; right: 12px; top: 12px; font-size: 0.8rem; font-weight: bold; color: var(--verde-exito); }
+  .match-card.wrong{ border-color: var(--rojo-error); background: #ffebee; animation: shake 0.4s; }
+
+  .feedback-toast {
+    margin-top: 15px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    display: none;
+    transition: all 0.3s;
+  }
+  .feedback-toast.success { background: #e8f5e9; color: var(--verde-exito); border: 1px solid var(--verde-exito); display: block; }
+  .feedback-toast.error { background: #ffebee; color: var(--rojo-error); border: 1px solid var(--rojo-error); display: block; }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+
+  /* Formato APA7 */
+  .apa-references{
+    background: var(--blanco);
+    border-left: 5px solid var(--azul-medio);
+    padding: 22px 28px;
+    margin-top: 50px;
+    border-radius: 0 10px 10px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+  }
+  .apa-references h4{ margin-top: 0; color: var(--azul-profundo); font-family: Georgia, serif; font-size: 1.2rem; }
+  .apa-item{ padding-left: 2em; text-indent: -2em; margin-bottom: 12px; font-size: 0.9rem; line-height: 1.6; color: #333; }
+  .apa-item a{ color: var(--azul-medio); word-break: break-all; }
+
+  /* App Reportes */
+  .app{display:grid;grid-template-columns:1fr 1.1fr;gap:30px}
+  @media(max-width:850px){.app{grid-template-columns:1fr}nav{position:static;padding:18px 5vw}.hero{padding-top:20px}}
+  
+  .panel{background:var(--marino);color:white;padding:25px;border-radius:8px; box-shadow: 0 10px 20px rgba(0,0,0,0.1)}
+  .panel h2{font-family:Georgia,serif;font-size:2.2rem;margin-top:0; color: var(--turquesa)}
+  label{display:block;margin:14px 0 6px;font-weight:bold; color: #d0e8f2; font-size: 0.9rem;}
+  input,textarea,select{width:100%;padding:12px;border:1px solid #205072;background:#091e30;color: #fff;font:inherit; border-radius: 6px}
+  input:focus,textarea:focus,select:focus{outline: 2px solid var(--agua)}
+  textarea{min-height:100px;resize:vertical}
+  
+  button, .btn-link{display:inline-block; text-decoration:none; text-align:center; border:0;padding:12px 18px;font-weight:bold;cursor:pointer;margin-top:12px; border-radius: 6px; transition: 0.2s transform, 0.2s background; touch-action: manipulation;}
+  button:active, .btn-link:active{transform: scale(0.97)}
+  .primary{background:var(--agua);color:var(--azul-profundo)}
+  .primary:hover{background:#38b6ff}
+  .secondary{background:#d0e8f2;color:var(--azul-profundo)}
+  .secondary:hover{background:#b2d8e8}
+  
+  .preview{margin-top:15px;max-width:100%;max-height:220px;display:none;border:2px solid var(--turquesa); border-radius: 6px}
+  .reports{display:grid;gap:15px}
+  .report{background:var(--blanco);border-left:6px solid var(--agua);padding:18px;display:grid;grid-template-columns:110px 1fr;gap:18px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-radius: 0 8px 8px 0;}
+  @media(max-width:500px){.report{grid-template-columns:1fr;}}
+  .report img{width:100%;height:100px;object-fit:cover;background:#dceef0; border-radius: 6px}
+  .report h3{margin:0 0 5px; color: var(--azul-profundo)}
+  .status{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--azul-medio);font-weight:bold}
+  .report-actions{display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;}
+
+  /* Nacimientos de Agua */
+  .nacimientos-grid{display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px; margin-top:25px;}
+  .nacimiento-card{background: var(--blanco); border-top: 5px solid var(--azul-medio); padding:20px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.04);}
+  .nacimiento-card h3{color:var(--azul-profundo); margin-top:0; margin-bottom:8px;}
+  .nacimiento-card .ubicacion-tag{font-size:.85rem; color:var(--azul-medio); font-weight:bold; margin-bottom:12px; display:block;}
+  .recomendaciones-list{background: var(--fondo-fresco); padding:12px 15px 12px 30px; border-radius:6px; font-size:.88rem; margin:15px 0 12px;}
+  .recomendaciones-list li{margin-bottom:5px;}
+
+  /* Laboratorio de Dibujo */
+  .artboard-wrap{
+    background:#003459;
+    padding:14px; 
+    border-radius: 12px; 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    touch-action: none;
+    width: 100%;
+  }
+  .canvas-container{
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-height: 480px;
+    background:#02111b;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  canvas#canvas{
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .tools-bar{display:flex; flex-direction: column; gap:12px; margin-bottom: 12px;}
+  .tools-group{display:flex; gap:6px; flex-wrap:wrap; justify-content: flex-start;}
+  .tools-group button{margin:0; font-size: 0.8rem; padding: 10px 12px; flex: 1 1 auto; text-align: center;}
+  .tools-group button.active{outline: 2px solid var(--turquesa); background: var(--azul-profundo); color: white;}
+  
+  .canvas-controls{
+    display: flex; 
+    flex-wrap: wrap;
+    gap: 12px; 
+    align-items: center; 
+    justify-content: space-between;
+    color: white; 
+    font-size: 0.85rem; 
+    background: rgba(255,255,255,0.08); 
+    padding: 10px 14px; 
+    border-radius: 8px;
+  }
+  .canvas-controls input[type="color"]{
+    width:36px; height: 36px; padding: 0; border: none; cursor: pointer; background: none; border-radius: 50%;
+  }
+  .canvas-controls input[type="range"]{ flex: 1; min-width: 100px; }
+
+  .stat{font-size:3rem;font-family:Georgia,serif;color:var(--agua)}
+  .bar{height:12px;background:#d0e8f2;margin:10px 0 25px; border-radius: 6px; overflow: hidden;}
+  .bar span{display:block;height:100%;background:var(--agua);width:0;transition:.5s}
+  
+  /* Ventana Modal */
+  .modal{display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3, 4, 94, 0.75); backdrop-filter:blur(5px); z-index:1000; justify-content:center; align-items:center; padding: 20px;}
+  .modal-content{background:var(--marino); color:white; padding:25px; border-radius:10px; max-width:480px; width:100%; box-shadow: 0 10px 25px rgba(0,0,0,0.4);}
+
+  footer{padding:40px 5vw;background:var(--marino);color:white; margin-top: 50px;}
+  .tiny{font-size:.82rem;line-height:1.5;opacity:.85}
+  
+  /* Resaltar la palabra Agua para interactividad */
+  .water-trigger {
+    cursor: pointer;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+  }
+  .water-trigger:hover {
+    color: var(--agua) !important;
+    text-shadow: 0 0 8px rgba(0, 180, 216, 0.5);
+  }
+</style>
+</head>
+<body>
+
+<!-- Canvas superpuesto para partículas globales -->
+<canvas id="particles-canvas"></canvas>
+
+<nav>
+  <a href="#proyecto">Proyecto</a>
+  <a href="#monitoreo">Monitoreo Global</a>
+  <a href="#nacimientos">Nacimientos de Agua</a>
+  <a href="#reportar">Reportar</a>
+  <a href="#galeria">Galería</a>
+  <a href="#arte">Laboratorio</a>
+  <a href="#referencias">Referencias</a>
+</nav>
+
+<header>
+  <div class="hero-container">
+    <div class="hero">
+      <div class="tag">ODS 6 · Agua Limpia · Artes Plásticas</div>
+      <h1>Agua<span>migos</span></h1>
+      <p>
+        Una experiencia artística e interactiva para observar, documentar y transformar nuestra relación con el <span class="water-trigger">agua</span>. Registra problemas ambientales, explora datos globales e integra arte participativo.
+      </p>
+      <a href="#reportar"><button class="primary">Crear un reporte</button></a>
+    </div>
+
+    <!-- MASCOTA GOTITA INTERACTIVA EN EL HERO -->
+    <div class="hero-gotita-wrapper">
+      <div class="gotita-speech-bubble" id="gotitaBubble">
+        ¡Hola! Soy <b>Aguamigo</b> 💧 Haz clic sobre mí para descubrir datos e indicadores clave sobre el <span class="water-trigger">agua</span> en el mundo.
+      </div>
+
+      <div id="gotita-hero" title="¡Haz clic para ver un dato del agua!">
+        <svg viewBox="0 0 100 120" width="100%" height="100%">
+          <!-- Cuerpo gota -->
+          <path d="M50 10 C50 10, 15 60, 15 82 A35 35 0 0 0 85 82 C85 60, 50 10, 50 10 Z" fill="url(#gotitaGrad)" stroke="#0077b6" stroke-width="2.5"/>
+          <!-- Brillo -->
+          <path d="M35 55 C25 70, 25 80, 28 85" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+          <!-- Ojos -->
+          <ellipse cx="40" cy="72" rx="4.5" ry="6.5" fill="#03045e"/>
+          <ellipse cx="60" cy="72" rx="4.5" ry="6.5" fill="#03045e"/>
+          <circle cx="41.5" cy="70" r="1.8" fill="#ffffff"/>
+          <circle cx="61.5" cy="70" r="1.8" fill="#ffffff"/>
+          <!-- Sonrisa -->
+          <path d="M43 83 Q50 90 57 83" fill="none" stroke="#03045e" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Mejillas -->
+          <circle cx="33" cy="78" r="4" fill="#ff8fa3" opacity="0.65"/>
+          <circle cx="67" cy="78" r="4" fill="#ff8fa3" opacity="0.65"/>
+          <!-- Piecitos -->
+          <ellipse cx="38" cy="112" rx="7" ry="4" fill="#0077b6"/>
+          <ellipse cx="62" cy="112" rx="7" ry="4" fill="#0077b6"/>
+          <!-- Gradiente -->
+          <defs>
+            <linearGradient id="gotitaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#90e0ef"/>
+              <stop offset="50%" stop-color="#00b4d8"/>
+              <stop offset="100%" stop-color="#0077b6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="gotita-hint" onclick="mostrarDatoMundial()">💡 ¡Tócame para aprender!</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<section id="proyecto">
+  <div class="section-title">
+    <h2>Concepto</h2><small>Arte + Programación + Agua</small>
+  </div>
+  <div class="grid">
+    <article class="card">
+      <div class="number">01</div>
+      <h3>Observar</h3>
+      <p>Explora tu entorno: identifica fugas, vertederos, <span class="water-trigger">agua</span> contaminada o fuentes en riesgo.</p>
+    </article>
+    <article class="card">
+      <div class="number">02</div>
+      <h3>Ubicar</h3>
+      <p>Guarda la dirección o coordenadas para consultarlas directamente en mapas e impulsar soluciones locales.</p>
+    </article>
+    <article class="card">
+      <div class="number">03</div>
+      <h3>Fluir (Interpretar)</h3>
+      <p>Representa la energía y dinámica de las corrientes de <span class="water-trigger">agua</span> mediante trazos orgánicos y algoritmos.</p>
+    </article>
+  </div>
+</section>
+
+<!-- SECCIÓN: ORGANIZACIONES (CONEXIÓN MEDIANTE LÍNEAS SVG Y VALIDACIÓN) -->
+<section id="monitoreo">
+  <div class="section-title">
+    <h2>Monitoreo Ciudadano y Ciencia Participativa</h2>
+    <small>Conecta con Líneas</small>
+  </div>
+  
+  <p>Conecta el título de cada organización con su descripción correcta. Haz clic en un título de la izquierda y luego en la tarjeta correspondiente de la derecha para trazar la línea de conexión:</p>
+
+  <div class="match-wrapper">
+    <!-- SVG donde se dibujarán las líneas de conexión -->
+    <svg id="lines-svg"></svg>
+
+    <div class="match-game" id="matchGame">
+      <div class="match-column" id="colEmpresas">
+        <!-- Generado por JS -->
+      </div>
+      <div class="match-column" id="colInfo">
+        <!-- Generado por JS -->
+      </div>
+    </div>
+  </div>
+
+  <div id="feedbackToast" class="feedback-toast"></div>
+</section>
+
+<!-- NACIMIENTOS DE AGUA EN MÉXICO -->
+<section id="nacimientos">
+  <div class="section-title">
+    <h2>Nacimientos de Agua en México</h2><small>Manantiales y Ojos de Agua</small>
+  </div>
+  
+  <div class="card" style="margin-top:20px;">
+    <h3>Selecciona un Estado</h3>
+    <p>Encuentra los nacimientos de <span class="water-trigger">agua</span> naturales más destacados de la región, su geolocalización exacta y las acciones recomendadas para su cuidado.</p>
+    
+    <label for="select-estado" style="color:var(--azul-profundo)">Estado:</label>
+    <select id="select-estado" onchange="mostrarNacimientos()" style="background:#f0f7f9; color:var(--marino); border-color:var(--azul-medio);">
+      <option value="">-- Elige un Estado --</option>
+      <option value="Puebla">Puebla</option>
+      <option value="Veracruz">Veracruz</option>
+      <option value="Michoacan">Michoacán</option>
+      <option value="Chiapas">Chiapas</option>
+      <option value="Oaxaca">Oaxaca</option>
+      <option value="San Luis Potosi">San Luis Potosí</option>
+      <option value="Estado de Mexico">Estado de México</option>
+      <option value="Morelos">Morelos</option>
+      <option value="Yucatan">Yucatán (Cenotes)</option>
+      <option value="Quintana Roo">Quintana Roo</option>
+      <option value="Jalisco">Jalisco</option>
+    </select>
+  </div>
+
+  <div id="nacimientos-contenedor" class="nacimientos-grid">
+    <div class="card" style="grid-column: 1/-1;">
+      <p>👈 Selecciona un estado para explorar sus fuentes de <span class="water-trigger">agua</span> y aprender a protegerlas.</p>
+    </div>
+  </div>
+</section>
+
+<!-- REPORTAR -->
+<section id="reportar">
+  <div class="section-title">
+    <h2>Nuevo reporte</h2><small>Georreferenciación</small>
+  </div>
+  <div class="app">
+    <div class="panel">
+      <h2>Haz visible el problema</h2>
+      <p>Sube evidencia visual de un cuerpo de <span class="water-trigger">agua</span> o problemática ambiental e ingresa su ubicación exacta.</p>
+
+      <label for="titulo">Título de la observación</label>
+      <input id="titulo" placeholder="Ej. Filtración o fuga en Río Atoyac">
+
+      <label for="categoria">Categoría</label>
+      <select id="categoria">
+        <option>Fuga / Desperdicio de Agua</option>
+        <option>Contaminación Química/Orgánica</option>
+        <option>Desechos en cuerpos de agua</option>
+        <option>Saneamiento e Infraestructura</option>
+        <option>Cuerpo de agua amenazado</option>
+      </select>
+
+      <label for="ubicacion">Ubicación o Coordenadas</label>
+      <input id="ubicacion" placeholder="Ej. Calle 5 de Mayo, Puebla O 19.0414, -98.2063">
+      <div>
+        <button type="button" class="secondary" onclick="usarUbicacionActual()">📍 Usar mi ubicación GPS</button>
+      </div>
+
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" placeholder="¿Qué observaste sobre el estado del agua?..."></textarea>
+
+      <label for="foto">Imagen / Evidencia</label>
+      <input id="foto" type="file" accept="image/*">
+      <img id="preview" class="preview" alt="Vista previa">
+
+      <button class="primary" onclick="crearReporte()">Publicar Reporte</button>
+      <button class="secondary" onclick="limpiarFormulario()">Limpiar</button>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3>Estadística del archivo</h3>
+        <p><b>Entrada:</b> Registro visual + Geolocalización → <b>Salida:</b> Mapeo comunitario de <span class="water-trigger">agua</span>.</p>
+        <div class="stat" id="contador">0</div>
+        <p>reportes registrados</p>
+        <div class="bar"><span id="barra"></span></div>
+        <p class="tiny">Los datos se conservan localmente en tu navegador.</p>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <h3>Arco narrativo</h3>
+        <p><b>Problema → Evidencia → Mapa → Conciencia e Impacto Visual.</b></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALERÍA -->
+<section id="galeria">
+  <div class="section-title">
+    <h2>Galería de reportes</h2><small>Archivo visual comunitario</small>
+  </div>
+  <div id="reports" class="reports"></div>
+</section>
+
+<!-- LABORATORIO CREATIVO -->
+<section id="arte">
+  <div class="section-title">
+    <h2>Laboratorio Creativo</h2><small>Simulación y Fluidez Táctil</small>
+  </div>
+  
+  <div class="app">
+    <div class="card">
+      <h3>Expresión y dinámica del <span class="water-trigger">agua</span></h3>
+      <p>Crea composiciones orgánicas en tiempo real. Utiliza tu dedo en celulares o el ratón en la computadora.</p>
+      
+      <div class="tools-bar">
+        <div class="tools-group">
+          <button class="secondary active" id="btn-linea" onclick="setModo('linea')">Flujo</button>
+          <button class="secondary" id="btn-onda" onclick="setModo('onda')">Ondas</button>
+          <button class="secondary" id="btn-gota" onclick="setModo('gota')">Gotas</button>
+          <button class="secondary" id="btn-spray" onclick="setModo('spray')">Salpicadura</button>
+          <button class="secondary" id="btn-trama" onclick="setModo('trama')">Tramas</button>
+        </div>
+
+        <div class="canvas-controls">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="margin:0; color:white">Pincel:</label>
+            <input type="color" id="pincel-color" value="#90e0ef">
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex:1;">
+            <label style="margin:0; color:white">Grosor:</label>
+            <input type="range" id="pincel-grosor" min="1" max="30" value="4">
+          </div>
+        </div>
+
+        <div class="tools-group">
+          <button class="secondary" onclick="limpiarCanvas()">Reiniciar</button>
+          <button class="secondary" onclick="descargarCanvas()">Guardar PNG</button>
+          <button class="primary" onclick="abrirModalArte()">🚀 Publicar en Galería</button>
+        </div>
+      </div>
+      <p class="tiny">Lienzo optimizado con eventos táctiles responsivos y trazado fluido simulando la corriente del <span class="water-trigger">agua</span>.</p>
+    </div>
+    
+    <div class="artboard-wrap">
+      <div class="canvas-container" id="canvas-container">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REFERENCIAS EN FORMATO APA 7 -->
+<section id="referencias">
+  <div class="apa-references">
+    <h4>Referencias Bibliográficas (APA 7.ª edición)</h4>
+    <div class="apa-item">
+      CrowdWater. (s. f.). <i>CrowdWater: Citizen science for hydrology</i>. Geographisches Institut, Universität Zürich. <a href="https://crowdwater.ch/" target="_blank" rel="noopener">https://crowdwater.ch/</a>
+    </div>
+    <div class="apa-item">
+      EyeOnWater. (s. f.). <i>EyeOnWater: Colour and clarity of natural waters</i>. European Union’s Horizon 2020 research and innovation programme. <a href="https://www.eyeonwater.org/" target="_blank" rel="noopener">https://www.eyeonwater.org/</a>
+    </div>
+    <div class="apa-item">
+      Water Reporter. (s. f.). <i>Water Reporter: Environmental monitoring platform for watersheds</i>. Commons Labs. <a href="https://www.waterreporter.org/" target="_blank" rel="noopener">https://www.waterreporter.org/</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- Modal para Publicar Dibujo -->
+<div id="modalArte" class="modal">
+  <div class="modal-content">
+    <h2 style="margin-top:0; color:var(--turquesa)">Publicar Pieza de Arte</h2>
+    <p>Asigna detalles para subir tu interpretación del <span class="water-trigger">agua</span> a la galería de reportes:</p>
+    
+    <label for="arte-titulo">Título de la Obra</label>
+    <input id="arte-titulo" placeholder="Ej. Abstracción de flujo de agua">
+
+    <label for="arte-categoria">Categoría</label>
+    <select id="arte-categoria">
+      <option>Interpretación Artística del Agua</option>
+      <option>Fuga / Desperdicio</option>
+      <option>Contaminación Química/Orgánica</option>
+      <option>Desechos en cuerpos de agua</option>
+    </select>
+
+    <label for="arte-descripcion">Notas o Reflexión</label>
+    <textarea id="arte-descripcion" style="min-height:80px" placeholder="Inspiración o problemática expresada en la obra..."></textarea>
+
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button class="primary" style="flex:1" onclick="publicarArteLienzo()">Publicar Ahora</button>
+      <button class="secondary" onclick="cerrarModalArte()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <h2>Aguamigos</h2>
+  <p>Plataforma para la sensibilización, monitoreo e interpretación artística del <span class="water-trigger">agua</span>.</p>
+</footer>
+
+<script>
+/* -------------------------------------------------------------
+   1. DATOS MUNDIALES SOBRE EL AGUA Y GOTITA INTERACTIVA EN HERO
+------------------------------------------------------------- */
+const datosAguaMundo = [
+  "🌐 <b>Solo el 2.5%</b> del agua del planeta es dulce, y más del 68% está congelada en glaciares.",
+  "🚰 <b>2,200 millones</b> de personas en el mundo carecen de acceso a agua potable gestionada de forma segura (ONU Agua).",
+  "🌍 <b>ODS 6:</b> Busca garantizar la disponibilidad y la gestión sostenible del agua y el saneamiento para todos hacia el 2030.",
+  "🏞️ Se estima que para <b>2050</b>, más de 5,000 millones de personas sufrirán escasez de agua debido al cambio climático y la sobreexplotación.",
+  "🛁 Un grifo goteando puede desperdiciar más de <b>11,000 litros de agua</b> al año.",
+  "🌊 El <b>80% de las aguas residuales</b> del mundo retornan al medio ambiente sin ser tratadas adecuadamente.",
+  "🌾 La agricultura representa cerca del <b>70% del consumo mundial</b> de agua dulce."
+];
+
+let indiceDatoActual = 0;
+const gotitaHero = document.getElementById('gotita-hero');
+const gotitaBubble = document.getElementById('gotitaBubble');
+
+function mostrarDatoMundial() {
+  const dato = datosAguaMundo[indiceDatoActual];
+  gotitaBubble.innerHTML = `💧 <b>¿Sabías que?</b><br>${dato}`;
+  gotitaBubble.classList.add('active');
+
+  // Incrementar índice para la siguiente interacción
+  indiceDatoActual = (indiceDatoActual + 1) % datosAguaMundo.length;
+
+  // Lanza partículas en las coordenadas de la gotita
+  const rect = gotitaHero.getBoundingClientRect();
+  spawnWaterParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+
+gotitaHero.addEventListener('click', mostrarDatoMundial);
+
+// Desplegar primer dato automáticamente tras 1.5 segundos
+setTimeout(() => {
+  gotitaBubble.classList.add('active');
+}, 1500);
+
+
+/* -------------------------------------------------------------
+   2. SISTEMA GLOBAL DE PARTICULAS AL HACER CLIC EN "AGUA"
+------------------------------------------------------------- */
+const pCanvas = document.getElementById('particles-canvas');
+const pCtx = pCanvas.getContext('2d');
+let particles = [];
+
+function resizeParticlesCanvas() {
+  pCanvas.width = window.innerWidth;
+  pCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeParticlesCanvas);
+resizeParticlesCanvas();
+
+class WaterParticle {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = Math.random() * 6 + 3;
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 5 + 2;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed - 1.5;
+    this.gravity = 0.12;
+    this.alpha = 1;
+    this.color = Math.random() > 0.3 ? '#00b4d8' : '#90e0ef';
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += this.gravity;
+    this.alpha -= 0.02;
+  }
+  draw() {
+    pCtx.save();
+    pCtx.globalAlpha = Math.max(0, this.alpha);
+    pCtx.beginPath();
+    pCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    pCtx.fillStyle = this.color;
+    pCtx.fill();
+    
+    pCtx.beginPath();
+    pCtx.arc(this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.3, 0, Math.PI * 2);
+    pCtx.fillStyle = '#ffffff';
+    pCtx.fill();
+    pCtx.restore();
+  }
+}
+
+function spawnWaterParticles(x, y) {
+  for (let i = 0; i < 28; i++) {
+    particles.push(new WaterParticle(x, y));
+  }
+}
+
+function animateParticles() {
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    particles[i].draw();
+    if (particles[i].alpha <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+document.addEventListener('click', (e) => {
+  const target = e.target;
+  const textContent = target.textContent || target.innerText || "";
+  const isWaterWord = target.classList.contains('water-trigger') || /agua|aguamigos/i.test(textContent);
+
+  if (isWaterWord) {
+    spawnWaterParticles(e.clientX, e.clientY);
+  }
+});
+
+
+/* -------------------------------------------------------------
+   3. CONEXIÓN DE ORGANIZACIONES MEDIANTE LÍNEAS SVG Y VALIDACIÓN
+------------------------------------------------------------- */
+const plataformas = [
+  {
+    id: "water-reporter",
+    nombre: "Water Reporter",
+    desc: "Plataforma diseñada para que comunidades, voluntariados y organizaciones ambientales puedan monitorear, documentar y proteger cuerpos de agua locales."
+  },
+  {
+    id: "crowdwater",
+    nombre: "CrowdWater",
+    desc: "Desarrollado por la Universidad de Zúrich que recolecta datos hidrológicos globalmente mediante una app móvil, registrando los niveles de agua, contaminación y secado de ríos."
+  },
+  {
+    id: "eyeonwater",
+    nombre: "EyeOnWater",
+    desc: "Iniciativa europea donde los voluntariados miden y registran el color y la claridad del agua de ríos, lagos y mares."
+  }
+];
+
+let selectedEmpresa = null;
+let selectedInfo = null;
+let conexionesHechas = [];
+
+function iniciarJuegoConexion() {
+  const colEmpresas = document.getElementById("colEmpresas");
+  const colInfo = document.getElementById("colInfo");
+  colEmpresas.innerHTML = "";
+  colInfo.innerHTML = "";
+  conexionesHechas = [];
+  limpiarLineasSVG();
+
+  const infoShuffled = [...plataformas].sort(() => Math.random() - 0.5);
+
+  plataformas.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "match-card";
+    card.dataset.id = item.id;
+    card.innerHTML = `<h3 style="margin:0; color:var(--azul-profundo);">${item.nombre}</h3>`;
+    card.addEventListener("click", () => seleccionarEmpresa(card, item.id));
+    colEmpresas.appendChild(card);
+  });
+
+  infoShuffled.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "match-card";
+    card.dataset.id = item.id;
+    card.innerHTML = `<p style="margin:0; font-size:0.92rem; line-height:1.5;">${item.desc}</p>`;
+    card.addEventListener("click", () => seleccionarInfo(card, item.id));
+    colInfo.appendChild(card);
+  });
+}
+
+function seleccionarEmpresa(card, id) {
+  if (card.classList.contains("matched-correct")) return;
+  document.querySelectorAll("#colEmpresas .match-card").forEach(c => c.classList.remove("selected"));
+  card.classList.add("selected");
+  selectedEmpresa = { card, id };
+  verificarConexion();
+}
+
+function seleccionarInfo(card, id) {
+  if (card.classList.contains("matched-correct")) return;
+  document.querySelectorAll("#colInfo .match-card").forEach(c => c.classList.remove("selected"));
+  card.classList.add("selected");
+  selectedInfo = { card, id };
+  verificarConexion();
+}
+
+function verificarConexion() {
+  if (selectedEmpresa && selectedInfo) {
+    const toast = document.getElementById("feedbackToast");
+    
+    if (selectedEmpresa.id === selectedInfo.id) {
+      // Correcto
+      selectedEmpresa.card.classList.remove("selected");
+      selectedInfo.card.classList.remove("selected");
+      selectedEmpresa.card.classList.add("matched-correct");
+      selectedInfo.card.classList.add("matched-correct");
+
+      // Trazar línea permanente en verde
+      dibujarLineaSVG(selectedEmpresa.card, selectedInfo.card, "var(--verde-exito)");
+
+      // Feedback
+      toast.className = "feedback-toast success";
+      toast.textContent = "¡Correcto! Has conectado " + selectedEmpresa.id.replace('-', ' ') + " adecuadamente.";
+
+      const rect = selectedInfo.card.getBoundingClientRect();
+      spawnWaterParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+      conexionesHechas.push(selectedEmpresa.id);
+      if (conexionesHechas.length === plataformas.length) {
+        toast.textContent = "🎉 ¡Felicidades! Has conectado todas las iniciativas correctamente.";
+      }
+    } else {
+      // Incorrecto
+      const eCard = selectedEmpresa.card;
+      const iCard = selectedInfo.card;
+      eCard.classList.add("wrong");
+      iCard.classList.add("wrong");
+
+      // Dibujar línea roja temporal
+      const tempLine = dibujarLineaSVG(eCard, iCard, "var(--rojo-error)");
+
+      toast.className = "feedback-toast error";
+      toast.textContent = "❌ Incorrecto, intenta de nuevo conectar el título con su información correspondiente.";
+
+      setTimeout(() => {
+        eCard.classList.remove("wrong", "selected");
+        iCard.classList.remove("wrong", "selected");
+        if (tempLine) tempLine.remove();
+      }, 800);
+    }
+    selectedEmpresa = null;
+    selectedInfo = null;
+  }
+}
+
+function dibujarLineaSVG(el1, el2, color) {
+  const svg = document.getElementById("lines-svg");
+  const wrapperRect = document.querySelector(".match-wrapper").getBoundingClientRect();
+  const r1 = el1.getBoundingClientRect();
+  const r2 = el2.getBoundingClientRect();
+
+  const x1 = r1.right - wrapperRect.left;
+  const y1 = r1.top + r1.height / 2 - wrapperRect.top;
+  const x2 = r2.left - wrapperRect.left;
+  const y2 = r2.top + r2.height / 2 - wrapperRect.top;
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  const cx1 = x1 + (x2 - x1) / 2;
+  const d = `M ${x1} ${y1} C ${cx1} ${y1}, ${cx1} ${y2}, ${x2} ${y2}`;
+
+  path.setAttribute("d", d);
+  path.setAttribute("stroke", color);
+  path.setAttribute("stroke-width", "4");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke-linecap", "round");
+
+  svg.appendChild(path);
+  return path;
+}
+
+function limpiarLineasSVG() {
+  document.getElementById("lines-svg").innerHTML = "";
+}
+
+window.addEventListener("resize", () => {
+  limpiarLineasSVG();
+  document.querySelectorAll("#colEmpresas .matched-correct").forEach(eCard => {
+    const id = eCard.dataset.id;
+    const iCard = document.querySelector(`#colInfo .matched-correct[data-id="${id}"]`);
+    if (iCard) dibujarLineaSVG(eCard, iCard, "var(--verde-exito)");
+  });
+});
+
+iniciarJuegoConexion();
+
+
+/* -------------------------------------------------------------
+   4. NACIMIENTOS DE AGUA EN MÉXICO
+------------------------------------------------------------- */
+const datosNacimientos = {
+  "Puebla": [
+    {
+      nombre: "Almoloya (Ojo de Agua)",
+      ubicacion: "Chignahuapan, Puebla",
+      coordenadas: "19.843017, -98.020331",
+      descripcion: "Manantial natural de agua dulce subterránea que alimenta la laguna local y abastece a zonas circundantes.",
+      recomendaciones: [
+        "Evitar tirar basuras o desechos orgánicos en las riberas.",
+        "No utilizar jabones ni bloqueadores no biodegradables.",
+        "Respetar la vegetación acuática nativa."
+      ]
+    },
+    {
+      nombre: "Manantiales de San Baltazar Tetela",
+      ubicacion: "Cuautinchán / Presa Valsequillo, Puebla",
+      coordenadas: "18.904745,-98.176961",
+      descripcion: "Afloramientos subterráneos que nutren la cuenca central del estado de Puebla.",
+      recomendaciones: [
+        "Mantener el área libre de vertidos químicos agropecuarios.",
+        "Promover la reforestación para favorecer la infiltración de lluvia."
+      ]
+    }
+  ],
+  "Veracruz": [
+    {
+      nombre: "Nacimiento del Río Filobobos",
+      ubicacion: "Tlapacoyan / Atzalan, Veracruz",
+      coordenadas: "19.982238, -97.174235",
+      descripcion: "Manantial de alta montaña que da origen a un río de gran biodiversidad.",
+      recomendaciones: [
+        "Prevenir la deforestación de las laderas circundantes.",
+        "Recoger todos los residuos generados durante visitas recreativas."
+      ]
+    },
+    {
+      nombre: "Ojo de Agua de Nogales",
+      ubicacion: "Nogales, Veracruz",
+      coordenadas: "18.820093, -97.165485",
+      descripcion: "Nacimiento natural proveniente del deshielo y filtraciones subterráneas del Pico de Orizaba.",
+      recomendaciones: [
+        "Proteger la vegetación de galería (ahuehuetes ancestrales).",
+        "Evitar la sobreexplotación turística e industrial sin regulación."
+      ]
+    }
+  ],
+  "Michoacan": [
+    {
+      nombre: "Manantial de Camécuaro",
+      ubicacion: "Tangancícuaro, Michoacán",
+      coordenadas: "19.696034, -101.232757",
+      descripcion: "Nacimiento cristalino rodeado de ahuehuetes centenarios, alimentado por acuíferos profundos.",
+      recomendaciones: [
+        "Prohibir vehículos de motor contaminantes.",
+        "Cuidar las raíces expuestas para prevenir la erosión del suelo."
+      ]
+    },
+    {
+      nombre: "Nacimiento de la Ciénaga de Zacapu",
+      ubicacion: "Zacapu, Michoacán",
+      coordenadas: "19.826718, -101.789599",
+      descripcion: "Ojo de agua origen de ríos locales e hábitat del hacho (Ambystoma dumerilii).",
+      recomendaciones: [
+        "Proteger las especies endémicas evitando la introducción de peces exóticos.",
+        "Evitar descargas de aguas residuales urbanas."
+      ]
+    }
+  ],
+  "Chiapas": [
+    {
+      nombre: "Nacimiento del Río San Vicente (El Chiflón)",
+      ubicacion: "Tzimol, Chiapas",
+      coordenadas: "16.1481, -92.2982",
+      descripcion: "Origen de potentes corrientes de aguas turquesas enriquecidas con minerales cársticos.",
+      recomendaciones: [
+        "Mantener senderos delimitados para no erosionar el suelo.",
+        "No depositar químicos, repelentes o cremas en la corriente."
+      ]
+    }
+  ],
+  "Oaxaca": [
+    {
+      nombre: "Manantial de Hierve el Agua",
+      ubicacion: "San Lorenzo Albarradas, Oaxaca",
+      coordenadas: "16.865550, -96.276178",
+      descripcion: "Manantiales naturales de agua carbonatada que han formado cascadas petrificadas a lo largo de milenios.",
+      recomendaciones: [
+        "Respetar las áreas de pozas naturales y la carga turística regulada.",
+        "No alterar la composición mineral extrayendo formaciones calcáreas."
+      ]
+    }
+  ],
+  "San Luis Potosi": [
+    {
+      nombre: "Nacimiento del Río Huasteco (Media Luna)",
+      ubicacion: "Rioverde, San Luis Potosí",
+      coordenadas: "21.861239, -100.028052",
+      descripcion: "Manantial subacuático térmico de extraordinaria claridad con seis aberturas de surgencia.",
+      recomendaciones: [
+        "Ingresar únicamente con equipos limpios para no contaminar la cuenca.",
+        "Protección estricta de la flora acuática sumergida."
+      ]
+    }
+  ],
+  "Estado de Mexico": [
+    {
+      nombre: "Laguna de San Miguel Almaya",
+      ubicacion: "Ocoyoacac, Estado de México",
+      coordenadas: "19.217626, -99.438022",
+      descripcion: "Nacimiento natural alimentado por el bosque de agua del Parque Nacional La Marquesa.",
+      recomendaciones: [
+        "Preservar la cobertura forestal para garantizar la recarga del acuífero.",
+        "Controlar el turismo masivo y el uso de cuatrimotos cercanas."
+      ]
+    }
+  ],
+  "Morelos": [
+    {
+      nombre: "Las Estacas (Nacimiento del Río Yautepec)",
+      ubicacion: "Tlaltizapán, Morelos",
+      coordenadas: "18.731958, -99.112949",
+      descripcion: "Borbollón natural que brota a más de 7,000 litros por segundo formando un cristalino río natural.",
+      recomendaciones: [
+        "Uso exclusivo de bloqueadores solares 100% biodegradables.",
+        "Evitar la alteración física del fondo de la fuente principal."
+      ]
+    }
+  ],
+  "Yucatan": [
+    {
+      nombre: "Cenote Abierto / Ojo de Agua Xlacah",
+      ubicacion: "Dzibilchaltún, Yucatán",
+      coordenadas: "21.0908, -89.5978",
+      descripcion: "Afloramiento directo del manto freático del sistema kárstico de la península.",
+      recomendaciones: [
+        "Ducharse obligatoriamente antes de entrar para eliminar grasas corporales.",
+        "Prohibido tocar o alterar la fauna acuática y formaciones rocosas."
+      ]
+    }
+  ],
+  "Quintana Roo": [
+    {
+      nombre: "Nacimiento Yalahau (Ojo de Agua)",
+      ubicacion: "Holbox, Quintana Roo",
+      coordenadas: "21.4678, -87.2889",
+      descripcion: "Manantial natural de agua dulce rodeado de manglares que emerge muy cerca del mar.",
+      recomendaciones: [
+        "Conservar el ecosistema de manglar circundante.",
+        "No dejar residuos plásticos que puedan llegar a la fauna marina."
+      ]
+    }
+  ],
+  "Jalisco": [
+    {
+      nombre: "Manantiales de Las Estacas / Los Camachos",
+      ubicacion: "Zapopan / Ixtlahuacán del Río, Jalisco",
+      coordenadas: "20.8522, -103.3283",
+      descripcion: "Surgencias de agua termal y dulce en la cuenca del Río Santiago.",
+      recomendaciones: [
+        "Evitar la contaminación por basura de los visitantes.",
+        "Proteger la vegetación de la barranca para evitar deslaves."
+      ]
+    }
+  ]
+};
+
+function mostrarNacimientos(){
+  const estado = document.getElementById("select-estado").value;
+  const cont = document.getElementById("nacimientos-contenedor");
+  cont.innerHTML = "";
+
+  if(!estado || !datosNacimientos[estado]){
+    cont.innerHTML = '<div class="card" style="grid-column: 1/-1;"><p>Selecciona un estado para ver la información.</p></div>';
+    return;
+  }
+
+  datosNacimientos[estado].forEach(item => {
+    const card = document.createElement("article");
+    card.className = "nacimiento-card";
+    
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.coordenadas || item.nombre + ' ' + item.ubicacion)}`;
+
+    let recomendacionesHTML = "";
+    item.recomendaciones.forEach(rec => {
+      recomendacionesHTML += `<li>${escapeHTML(rec)}</li>`;
+    });
+
+    card.innerHTML = `
+      <h3>🌱 ${escapeHTML(item.nombre)}</h3>
+      <span class="ubicacion-tag">📍 ${escapeHTML(item.ubicacion)}</span>
+      <p>${escapeHTML(item.descripcion)}</p>
+      
+      <div class="recomendaciones-list">
+        <strong>🛡️ Cuidado y Protección:</strong>
+        <ul>${recomendacionesHTML}</ul>
+      </div>
+
+      <a href="${mapsUrl}" target="_blank" rel="noopener" class="btn-link primary" style="width:100%">🗺️ Ver en Google Maps</a>
+    `;
+    cont.appendChild(card);
+  });
+}
+
+
+/* -------------------------------------------------------------
+   5. SISTEMA DE REPORTES
+------------------------------------------------------------- */
+let imagenData = "";
+let reportes = JSON.parse(localStorage.getItem("aquaforma_reportes") || "[]");
+
+const foto = document.getElementById("foto");
+const preview = document.getElementById("preview");
+
+foto.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    imagenData = reader.result;
+    preview.src = imagenData;
+    preview.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+});
+
+function crearReporte(){
+  const titulo = document.getElementById("titulo").value.trim();
+  const categoria = document.getElementById("categoria").value;
+  const ubicacion = document.getElementById("ubicacion").value.trim();
+  const descripcion = document.getElementById("descripcion").value.trim();
+
+  if(!titulo || !ubicacion || !descripcion){
+    alert("Por favor completa el título, la ubicación y la descripción.");
+    return;
+  }
+
+  const reporte = {
+    titulo, categoria, ubicacion, descripcion,
+    imagen: imagenData,
+    fecha: new Date().toLocaleString("es-MX")
+  };
+
+  reportes.unshift(reporte);
+  localStorage.setItem("aquaforma_reportes", JSON.stringify(reportes));
+  renderReportes();
+  actualizarContadores();
+  limpiarFormulario(false);
+  location.hash = "galeria";
+}
+
+function renderReportes(){
+  const cont = document.getElementById("reports");
+  cont.innerHTML = "";
+
+  if(reportes.length === 0){
+    cont.innerHTML = '<div class="card"><p>El archivo visual está vacío. Registra una observación o crea un arte en el laboratorio.</p></div>';
+    return;
+  }
+
+  reportes.forEach((r, i) => {
+    const article = document.createElement("article");
+    article.className = "report";
+    
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.ubicacion)}`;
+
+    article.innerHTML = `
+      ${r.imagen ? `<img src="${r.imagen}" alt="Reporte">` : `<div style="background:#0077b6;width:100%;height:100px;border-radius:6px"></div>`}
+      <div>
+        <div class="status">${escapeHTML(r.categoria)} · ${escapeHTML(r.fecha)}</div>
+        <h3>${escapeHTML(r.titulo)}</h3>
+        <p style="margin:6px 0; font-size:0.9rem;"><b>📍 Ubicación:</b> ${escapeHTML(r.ubicacion)}</p>
+        <p style="margin:6px 0; font-size:0.95rem;">${escapeHTML(r.descripcion)}</p>
+        <div class="report-actions">
+          <a href="${mapsUrl}" target="_blank" rel="noopener" class="btn-link primary">🗺️ Ver Mapa</a>
+          <button class="secondary" onclick="eliminarReporte(${i})">Eliminar</button>
+        </div>
+      </div>`;
+    cont.appendChild(article);
+  });
+}
+
+function eliminarReporte(i){
+  reportes.splice(i,1);
+  localStorage.setItem("aquaforma_reportes", JSON.stringify(reportes));
+  renderReportes();
+  actualizarContadores();
+}
+
+function actualizarContadores(){
+  document.getElementById("contador").textContent = reportes.length;
+  document.getElementById("barra").style.width = Math.min(reportes.length * 10, 100) + "%";
+}
+
+function limpiarFormulario(resetImagen=true){
+  ["titulo","ubicacion","descripcion"].forEach(id => document.getElementById(id).value = "");
+  if(resetImagen){
+    foto.value = "";
+    imagenData = "";
+    preview.style.display = "none";
+  }
+}
+
+function escapeHTML(text){
+  return text.replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+function usarUbicacionActual(){
+  if(!navigator.geolocation){
+    alert("Tu navegador no soporta geolocalización.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    posicion => {
+      const lat = posicion.coords.latitude.toFixed(5);
+      const lng = posicion.coords.longitude.toFixed(5);
+      document.getElementById("ubicacion").value = `${lat}, ${lng}`;
+    },
+    () => alert("No se pudo acceder a la ubicación actual.")
+  );
+}
+
+
+/* -------------------------------------------------------------
+   6. LABORATORIO CREATIVO - CANVAS
+------------------------------------------------------------- */
+const canvas = document.getElementById("canvas");
+const canvasContainer = document.getElementById("canvas-container");
+const ctx = canvas.getContext("2d");
+
+let dibujando = false;
+let modoActual = "linea";
+let ultimo = null;
+let t = 0;
+
+function resizeCanvas() {
+  const rect = canvasContainer.getBoundingClientRect();
+  if (rect.width > 0 && rect.height > 0) {
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(canvas, 0, 0);
+
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    fondoCanvas();
+    ctx.drawImage(tempCanvas, 0, 0, rect.width, rect.height);
+  }
+}
+
+function fondoCanvas(){
+  ctx.fillStyle = "#02111b"; 
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  ctx.strokeStyle = "rgba(0, 180, 216, 0.08)";
+  ctx.lineWidth = 1;
+  for(let x=0; x<canvas.width; x+=30){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
+  }
+  for(let y=0; y<canvas.height; y+=30){
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
+  }
+}
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  let clientX = e.clientX;
+  let clientY = e.clientY;
+
+  if (e.touches && e.touches.length > 0) {
+    clientX = e.touches[0].clientX;
+    clientY = e.touches[0].clientY;
+  }
+
+  return {
+    x: (clientX - rect.left) * (canvas.width / rect.width),
+    y: (clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+function iniciarTrazo(e) {
+  dibujando = true;
+  ultimo = getCanvasPos(e);
+}
+
+function moverTrazo(e) {
+  if (!dibujando) return;
+  if (e.cancelable) e.preventDefault();
+
+  const p = getCanvasPos(e);
+  const dx = p.x - ultimo.x, dy = p.y - ultimo.y;
+  const distancia = Math.hypot(dx,dy);
+  
+  const color = document.getElementById("pincel-color").value;
+  const grosor = document.getElementById("pincel-grosor").value;
+
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = grosor;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  if (modoActual === "linea") {
+    ctx.beginPath();
+    ctx.moveTo(ultimo.x, ultimo.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  } else if (modoActual === "onda") {
+    ctx.beginPath();
+    ctx.moveTo(ultimo.x, ultimo.y);
+    const cx = (ultimo.x + p.x)/2;
+    const cy = (ultimo.y + p.y)/2 + Math.sin(ultimo.x * 0.05 + t) * 15;
+    ctx.quadraticCurveTo(cx, cy, p.x, p.y);
+    ctx.stroke();
+  } else if (modoActual === "gota") {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.random() * (grosor * 1.5) + 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.random() * (grosor * 3) + grosor, 0, Math.PI * 2);
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  } else if (modoActual === "spray") {
+    for (let i = 0; i < 10; i++) {
+      const offsetX = (Math.random() - 0.5) * (grosor * 3);
+      const offsetY = (Math.random() - 0.5) * (grosor * 3);
+      ctx.fillRect(p.x + offsetX, p.y + offsetY, 2, 2);
+    }
+  } else if (modoActual === "trama" && distancia > 3) {
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(ultimo.x + i*4, ultimo.y - i*4);
+      ctx.lineTo(p.x + i*4, p.y - i*4);
+      ctx.stroke();
+    }
+  }
+
+  ultimo = p;
+}
+
+function finalizarTrazo() {
+  dibujando = false;
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  iniciarTrazo(e);
+});
+canvas.addEventListener("pointermove", moverTrazo);
+canvas.addEventListener("pointerup", (e) => {
+  try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+  finalizarTrazo();
+});
+canvas.addEventListener("pointercancel", finalizarTrazo);
+
+function setModo(m){
+  modoActual = m;
+  document.querySelectorAll('.tools-group button').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(`btn-${m}`);
+  if(btn) btn.classList.add('active');
+}
+
+function limpiarCanvas(){ fondoCanvas(); }
+
+function descargarCanvas(){
+  const link = document.createElement('a');
+  link.download = 'arte-agua-aguamigos.png';
+  link.href = canvas.toDataURL();
+  link.click();
+}
+
+function abrirModalArte(){
+  document.getElementById("modalArte").style.display = "flex";
+}
+
+function cerrarModalArte(){
+  document.getElementById("modalArte").style.display = "none";
+}
+
+function publicarArteLienzo(){
+  const titulo = document.getElementById("arte-titulo").value.trim();
+  const categoria = document.getElementById("arte-categoria").value;
+  const descripcion = document.getElementById("arte-descripcion").value.trim();
+
+  if(!titulo || !descripcion){
+    alert("Por favor ingresa un título y una pequeña descripción de tu obra.");
+    return;
+  }
+
+  const reporteArte = {
+    titulo: `🎨 ${titulo}`,
+    categoria,
+    ubicacion: "Laboratorio Creativo",
+    descripcion,
+    imagen: canvas.toDataURL(),
+    fecha: new Date().toLocaleString("es-MX")
+  };
+
+  reportes.unshift(reporteArte);
+  localStorage.setItem("aquaforma_reportes", JSON.stringify(reportes));
+  renderReportes();
+  actualizarContadores();
+  
+  cerrarModalArte();
+  document.getElementById("arte-titulo").value = "";
+  document.getElementById("arte-descripcion").value = "";
+  location.hash = "galeria";
+}
+
+function animarCanvas(){
+  t += 0.03;
+  requestAnimationFrame(animarCanvas);
+}
+
+window.addEventListener("load", () => {
+  resizeCanvas();
+  renderReportes();
+  actualizarContadores();
+  animarCanvas();
+});
+
+window.addEventListener("resize", () => {
+  resizeCanvas();
+});
+</script>
+</body>
+</html>
